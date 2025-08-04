@@ -150,7 +150,7 @@ function Posts() {
           </div>
 
           {/* Category Filter */}
-          <div className="flex gap-2" style={{ flexWrap: 'wrap', justifyContent: 'center',padding:5 }}>
+          <div className="flex gap-2" style={{ flexWrap: 'wrap', justifyContent: 'center',paddingBottom:16 }}>
             {categories.map(category => (
               <button
                 key={category}

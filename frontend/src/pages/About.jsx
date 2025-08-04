@@ -72,14 +72,14 @@ function About() {
                 style={{ color: "var(--gray-500)", fontSize: "14px" }}
               >
                 <Calendar size={16} />
-                <span>Writing since 2020</span>
+                <span>Writing since 2025</span>
               </div>
             </div>
 
             {/* Social links */}
             <div className="flex items-center justify-center gap-4">
               <a
-                href="mailto:dushimire.aine@example.com"
+                href="mailto:ainedushimire@gmail.com"
                 style={{
                   color: "var(--gray-600)",
                   transition: "color 0.15s ease",
@@ -91,7 +91,7 @@ function About() {
                 <Mail size={20} />
               </a>
               <a
-                href="https://twitter.com/dushimire_aine"
+                href="https://twitter.com/aine_dushimire"
                 style={{
                   color: "var(--gray-600)",
                   transition: "color 0.15s ease",
@@ -115,7 +115,7 @@ function About() {
                 <Linkedin size={20} />
               </a>
               <a
-                href="https://github.com/dushimire-aine"
+                href="https://github.com/aine1100"
                 style={{
                   color: "var(--gray-600)",
                   transition: "color 0.15s ease",

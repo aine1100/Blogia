@@ -62,6 +62,7 @@ function Home() {
     } catch (err) {
       setError("Failed to fetch posts");
       setLoading(false);
+      console.log(err)
     }
   };
 

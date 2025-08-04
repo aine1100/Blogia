@@ -93,6 +93,7 @@ p {
 .btn-primary:hover {
   background: var(--gray-800);
   transform: translateY(-1px);
+  color:var(--white)
 }
 
 .btn-secondary {

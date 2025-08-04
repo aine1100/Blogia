@@ -77,6 +77,7 @@ function DashboardSettings() {
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       setLoading(false)
+      console.log(err)
     }
   }
 

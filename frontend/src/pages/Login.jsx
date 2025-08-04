@@ -31,6 +31,7 @@ function Login() {
     } catch (err) {
       setError('Invalid email or password')
       setLoading(false)
+      console.log(err)
     }
   }
 
@@ -74,6 +75,7 @@ function Login() {
                 className="input"
                 placeholder="Enter your email"
                 required
+                style={{outline:"none"}}
               />
             </div>
 
@@ -99,6 +101,7 @@ function Login() {
                 className="input"
                 placeholder="Enter your password"
                 required
+                style={{outline:"none"}}
               />
             </div>
 

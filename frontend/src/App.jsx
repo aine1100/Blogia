@@ -13,6 +13,7 @@ import DashboardSubscribers from "./pages/DashboardSubscribers";
 import DashboardSettings from "./pages/DashboardSettings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import DashboardPostDetail from "./pages/DashboardPostDetail";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/edit/:id" element={<EditPost />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/posts" element={<DashboardPosts />} />
+            <Route path="/dashboard/post/:id" element={<DashboardPostDetail/>} />
             <Route
               path="/dashboard/subscribers"
               element={<DashboardSubscribers />}

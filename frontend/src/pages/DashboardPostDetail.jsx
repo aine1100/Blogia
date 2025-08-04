@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import AuthorPostView from "../components/AuthorPostView";
 
-function PostDetail() {
+function DashboardPostDetail() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -297,7 +297,7 @@ This stack allows you to build scalable, maintainable applications that can grow
       {/* Back button */}
       <div className="container py-4" style={{ padding: "16px 32px" }}>
         <Link
-          to="/posts"
+          to="/dashboard"
           className="flex items-center gap-2"
           style={{
             color: "var(--gray-600)",
@@ -310,7 +310,7 @@ This stack allows you to build scalable, maintainable applications that can grow
           onMouseLeave={(e) => (e.target.style.color = "var(--gray-600)")}
         >
           <ArrowLeft size={16} />
-          Back to articles
+          Back to home
         </Link>
       </div>
 
@@ -613,22 +613,9 @@ This stack allows you to build scalable, maintainable applications that can grow
               padding: "24px",
               borderRadius: "12px",
               marginBottom: "32px",
-              display:"flex",
-              flexDirection:"column",
-              gap:"16px"
             }}
           >
-            <form onSubmit={handleCommentSubmit} style={{gap:"16px",display:"flex",flexDirection:"column"}}>
-              
-              <input
-                type="text"
-                id="names"
-                name="fullname"
-                className="input"
-                placeholder="Enter your Full Names"
-                required
-                style={{outline:"none"}}
-              />
+            <form onSubmit={handleCommentSubmit}>
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -770,4 +757,4 @@ This stack allows you to build scalable, maintainable applications that can grow
   );
 }
 
-export default PostDetail;
+export default DashboardPostDetail;

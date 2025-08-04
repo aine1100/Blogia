@@ -40,6 +40,7 @@ function Register() {
     } catch (err) {
       setError('Registration failed. Please try again.')
       setLoading(false)
+      console.log(err)
     }
   }
 
@@ -83,6 +84,7 @@ function Register() {
                 className="input"
                 placeholder="Enter your full name"
                 required
+                style={{outline:"none"}}
               />
             </div>
 
@@ -108,6 +110,8 @@ function Register() {
                 className="input"
                 placeholder="Choose a username"
                 required
+                style={{outline:"none"}}
+
               />
             </div>
 
@@ -133,6 +137,8 @@ function Register() {
                 className="input"
                 placeholder="Enter your email"
                 required
+                style={{outline:"none"}}
+
               />
             </div>
 
@@ -158,6 +164,8 @@ function Register() {
                 className="input"
                 placeholder="Create a password"
                 required
+                style={{outline:"none"}}
+
               />
             </div>
 
@@ -183,6 +191,8 @@ function Register() {
                 className="input"
                 placeholder="Confirm your password"
                 required
+                style={{outline:"none"}}
+
               />
             </div>
 
@@ -190,7 +200,7 @@ function Register() {
               type="submit"
               disabled={loading}
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '16px' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '16px',outline:"none" }}
             >
               {loading ? (
                 <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
