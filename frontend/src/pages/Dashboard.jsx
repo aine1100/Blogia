@@ -72,6 +72,7 @@ function Dashboard() {
       setLoading(false);
     } catch (err) {
       setLoading(false);
+      console.log(err)
     }
   };
 
@@ -114,10 +115,10 @@ function Dashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="btn btn-ghost" style={{ padding: "8px" }}>
+              <button className="btn btn-ghost" style={{ padding: "8px",outline:'none' }}>
                 <Bell size={20} />
               </button>
-              <button className="btn btn-ghost" style={{ padding: "8px" }}>
+              <button className="btn btn-ghost" style={{ padding: "8px",outline:'none' }}>
                 <Settings size={20} />
               </button>
               <Link to="/create" className="btn btn-primary">
@@ -471,7 +472,7 @@ function Dashboard() {
                     e.target.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3" style={{background:"var(--white)"}}>
                     <div
                       style={{
                         width: "40px",

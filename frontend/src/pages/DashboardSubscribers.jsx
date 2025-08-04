@@ -134,8 +134,7 @@ function DashboardSubscribers() {
                 onMouseEnter={(e) => e.target.style.color = 'var(--black)'}
                 onMouseLeave={(e) => e.target.style.color = 'var(--gray-600)'}
               >
-                <ArrowLeft size={16} />
-                Back to dashboard
+                <ArrowLeft size={24} />
               </Link>
               
               <h1 style={{ 

@@ -193,7 +193,7 @@ This stack allows you to build scalable, maintainable applications that can grow
     } catch (err) {
       setError("Failed to fetch post");
       setLoading(false);
-      console.log(err)
+      console.log(err);
     }
   };
 
@@ -736,7 +736,7 @@ This stack allows you to build scalable, maintainable applications that can grow
                               display: "flex",
                               alignItems: "center",
                               gap: "4px",
-                             outline:"none"
+                              outline: "none",
                             }}
                           >
                             <Heart size={14} />
@@ -752,8 +752,7 @@ This stack allows you to build scalable, maintainable applications that can grow
           </div>
         </section>
       </article>
-
-        </div>
+    </div>
   );
 }
 
