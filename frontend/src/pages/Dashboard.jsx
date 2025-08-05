@@ -11,21 +11,24 @@ import {
   Settings,
   Bell,
 } from "lucide-react";
+import apiService from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 function Dashboard() {
   const [stats, setStats] = useState({
-    totalPosts: 12,
-    totalViews: 2847,
-    subscribers: 156,
-    thisMonth: {
-      posts: 3,
-      views: 892,
-      newSubscribers: 23,
-    },
+    totalPosts: 0,
+    publishedPosts: 0,
+    draftPosts: 0,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
+    totalSubscribers: 0,
   });
 
   const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -33,46 +36,23 @@ function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Mock data - replace with actual API calls
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      setLoading(true);
+      setError('');
 
-      setRecentPosts([
-        {
-          id: 1,
-          title: "Building Modern Web Applications with FastAPI",
-          status: "published",
-          views: 342,
-          likes: 28,
-          comments: 12,
-          created_at: "2024-01-15T10:30:00Z",
-          published_at: "2024-01-15T10:30:00Z",
-        },
-        {
-          id: 2,
-          title: "The Art of Minimal Design",
-          status: "published",
-          views: 189,
-          likes: 15,
-          comments: 8,
-          created_at: "2024-01-12T15:45:00Z",
-          published_at: "2024-01-12T15:45:00Z",
-        },
-        {
-          id: 3,
-          title: "Understanding User Experience Through Data",
-          status: "draft",
-          views: 0,
-          likes: 0,
-          comments: 0,
-          created_at: "2024-01-10T09:20:00Z",
-          published_at: null,
-        },
+      // Fetch dashboard stats and recent posts in parallel
+      const [statsResponse, postsResponse] = await Promise.all([
+        apiService.getDashboardStats(),
+        apiService.getRecentPosts(5)
       ]);
 
-      setLoading(false);
+      setStats(statsResponse);
+      setRecentPosts(postsResponse.recentPosts || []);
+      
     } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError('Failed to load dashboard data. Please try again.');
+    } finally {
       setLoading(false);
-      console.log(err)
     }
   };
 
@@ -86,8 +66,31 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh'
+      }}>
+        <div className="spinner" style={{ width: '32px', height: '32px' }}></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8">
+        <div className="container">
+          <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: 'center' }}>
+            <div className="error" style={{ marginBottom: '16px' }}>{error}</div>
+            <button 
+              onClick={fetchDashboardData}
+              className="btn btn-primary"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -110,7 +113,7 @@ function Dashboard() {
                 Dashboard
               </h1>
               <p style={{ color: "var(--gray-600)", fontSize: "16px" }}>
-                Welcome back! Here's what's happening with your blog.
+                Welcome back, {user?.full_name || user?.username}! Here's what's happening with your blog.
               </p>
             </div>
 
@@ -162,7 +165,7 @@ function Dashboard() {
                     borderRadius: "4px",
                   }}
                 >
-                  +{stats.thisMonth.posts} this month
+                  {stats.publishedPosts} published
                 </span>
               </div>
               <div
@@ -212,7 +215,7 @@ function Dashboard() {
                     borderRadius: "4px",
                   }}
                 >
-                  +{stats.thisMonth.views} this month
+                  {stats.totalLikes} likes
                 </span>
               </div>
               <div
@@ -223,7 +226,7 @@ function Dashboard() {
                   marginBottom: "4px",
                 }}
               >
-                {stats.totalViews.toLocaleString()}
+                {stats.totalViews?.toLocaleString() || 0}
               </div>
               <p style={{ color: "var(--gray-600)", fontSize: "14px" }}>
                 Total views
@@ -262,7 +265,7 @@ function Dashboard() {
                     borderRadius: "4px",
                   }}
                 >
-                  +{stats.thisMonth.newSubscribers} this month
+                  {stats.totalComments} comments
                 </span>
               </div>
               <div
@@ -273,7 +276,7 @@ function Dashboard() {
                   marginBottom: "4px",
                 }}
               >
-                {stats.subscribers}
+                {stats.totalSubscribers || 0}
               </div>
               <p style={{ color: "var(--gray-600)", fontSize: "14px" }}>
                 Subscribers
@@ -332,18 +335,18 @@ function Dashboard() {
                             className="badge"
                             style={{
                               background:
-                                post.status === "published"
+                                post.is_published
                                   ? "var(--gray-100)"
                                   : "#fef3c7",
                               color:
-                                post.status === "published"
+                                post.is_published
                                   ? "var(--gray-600)"
                                   : "#92400e",
                               fontSize: "11px",
                               padding: "2px 6px",
                             }}
                           >
-                            {post.status}
+                            {post.is_published ? 'published' : 'draft'}
                           </span>
                           <span
                             style={{
@@ -351,9 +354,7 @@ function Dashboard() {
                               color: "var(--gray-500)",
                             }}
                           >
-                            {post.published_at
-                              ? formatDate(post.published_at)
-                              : formatDate(post.created_at)}
+                            {formatDate(post.created_at)}
                           </span>
                         </div>
 
@@ -384,7 +385,7 @@ function Dashboard() {
                           </Link>
                         </h3>
 
-                        {post.status === "published" && (
+                        {post.is_published && (
                           <div
                             className="flex items-center gap-4"
                             style={{
@@ -394,14 +395,14 @@ function Dashboard() {
                           >
                             <div className="flex items-center gap-1">
                               <Eye size={12} />
-                              <span>{post.views}</span>
+                              <span>{post.views || 0}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <TrendingUp size={12} />
-                              <span>{post.likes}</span>
+                              <span>{post.likes || 0}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <span>{post.comments} comments</span>
+                              <span>{post.comments || 0} comments</span>
                             </div>
                           </div>
                         )}
@@ -415,9 +416,9 @@ function Dashboard() {
                         >
                           Edit
                         </Link>
-                        {post.status === "published" && (
+                        {post.is_published && (
                           <Link
-                            to={`/post/${post.id}`}
+                            to={`/dashboard/post/${post.id}`}
                             className="btn btn-ghost"
                             style={{ padding: "6px 12px", fontSize: "12px" }}
                           >
@@ -506,7 +507,7 @@ function Dashboard() {
                 </Link>
 
                 <Link
-                  to="/dashboard/analytics"
+                  to="/analytics"
                   style={{
                     background: "var(--white)",
                     padding: "20px",

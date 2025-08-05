@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Save, User, Bell, Shield, Globe } from "lucide-react";
+import apiService from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 function DashboardSettings() {
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [fetchLoading, setFetchLoading] = useState(true);
 
   // Focus states for textareas
   const [bioFocused, setBioFocused] = useState(false);
@@ -19,14 +23,16 @@ function DashboardSettings() {
   const bioMaxLength = 500;
   const descMaxLength = 200;
 
+  const {  updateUser } = useAuth();
+
   const [profileData, setProfileData] = useState({
-    full_name: "Dushimire Aine",
-    username: "dushimire_aine",
-    email: "dushimire.aine@example.com",
-    bio: "Senior Software Engineer with 8+ years of experience building scalable web applications. Passionate about clean code and modern development practices.",
-    website: "https://dushimire.dev",
-    twitter: "@dushimire_aine",
-    linkedin: "dushimire-aine",
+    full_name: "",
+    username: "",
+    email: "",
+    bio: "",
+    website: "",
+    twitter: "",
+    linkedin: "",
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -39,10 +45,10 @@ function DashboardSettings() {
   });
 
   const [blogSettings, setBlogSettings] = useState({
-    blog_title: "BlogApp",
-    blog_description: "Stories worth reading",
+    blog_title: "My Blog",
+    blog_description: "Welcome to my blog",
     allow_comments: true,
-    moderate_comments: true,
+    moderate_comments: false,
     show_subscriber_count: true,
     custom_domain: "",
     analytics_enabled: true,
@@ -96,33 +102,101 @@ function DashboardSettings() {
     adjustHeight(descRef);
   }, [profileData.bio, blogSettings.blog_description]);
 
+  // Fetch user data and settings on component mount
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      setFetchLoading(true);
+      setError('');
+
+      // Fetch user profile and settings in parallel
+      const [userProfile, userSettings] = await Promise.all([
+        apiService.getCurrentUser(),
+        apiService.getUserSettings().catch(() => null) // Settings might not exist yet
+      ]);
+
+      // Update profile data
+      setProfileData({
+        full_name: userProfile.full_name || '',
+        username: userProfile.username || '',
+        email: userProfile.email || '',
+        bio: userProfile.bio || '',
+        website: userProfile.website || '',
+        twitter: userProfile.twitter || '',
+        linkedin: userProfile.linkedin || '',
+      });
+
+      // Update notification settings
+      if (userSettings) {
+        setNotificationSettings({
+          email_comments: userSettings.comment_notifications ?? true,
+          email_likes: userSettings.like_notifications ?? false,
+          email_subscribers: userSettings.email_notifications ?? true,
+          email_newsletter: userSettings.newsletter_subscription ?? true,
+          push_comments: userSettings.comment_notifications ?? true,
+          push_likes: userSettings.like_notifications ?? false,
+        });
+
+        // Update blog settings
+        setBlogSettings({
+          blog_title: userSettings.blog_title || 'My Blog',
+          blog_description: userSettings.blog_description || 'Welcome to my blog',
+          allow_comments: userSettings.allow_comments ?? true,
+          moderate_comments: userSettings.moderate_comments ?? false,
+          show_subscriber_count: true, // This might be a separate setting
+          custom_domain: '', // This might be a separate setting
+          analytics_enabled: true, // This might be a separate setting
+        });
+      }
+
+    } catch (err) {
+      console.error('Failed to fetch user data:', err);
+      setError('Failed to load settings. Please try again.');
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
   const handleSave = async (section) => {
     setLoading(true);
     setSuccess("");
+    setError("");
 
     try {
-      // TODO: Implement actual save API call
-      console.log(
-        `Saving ${section}:`,
-        section === "profile"
-          ? profileData
-          : section === "notifications"
-          ? notificationSettings
-          : blogSettings
-      );
+      if (section === "profile") {
+        // Update user profile
+        const updatedUser = await apiService.updateProfile(profileData);
+        updateUser(updatedUser); // Update auth context
+        setSuccess("Profile updated successfully!");
+      } else if (section === "notifications" || section === "blog") {
+        // Combine notification and blog settings for the user settings API
+        const settingsData = {
+          // Notification settings
+          email_notifications: notificationSettings.email_subscribers,
+          comment_notifications: notificationSettings.email_comments,
+          like_notifications: notificationSettings.email_likes,
+          newsletter_subscription: notificationSettings.email_newsletter,
+          
+          // Blog settings
+          blog_title: blogSettings.blog_title,
+          blog_description: blogSettings.blog_description,
+          allow_comments: blogSettings.allow_comments,
+          moderate_comments: blogSettings.moderate_comments,
+        };
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSuccess(
-        `${
-          section.charAt(0).toUpperCase() + section.slice(1)
-        } settings saved successfully!`
-      );
-      setLoading(false);
+        await apiService.updateUserSettings(settingsData);
+        setSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} settings saved successfully!`);
+      }
 
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error(`Failed to save ${section}:`, err);
+      setError(err.message || `Failed to save ${section} settings. Please try again.`);
+    } finally {
       setLoading(false);
-      console.log(err);
     }
   };
 
@@ -132,6 +206,128 @@ function DashboardSettings() {
     { key: "blog", label: "Blog Settings", icon: Globe },
     { key: "security", label: "Security", icon: Shield },
   ];
+
+  // Password Change Component
+  const PasswordChangeForm = () => {
+    const [passwordData, setPasswordData] = useState({
+      current_password: '',
+      new_password: '',
+      confirm_password: ''
+    });
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
+    const [passwordSuccess, setPasswordSuccess] = useState('');
+
+    const handlePasswordChange = (e) => {
+      setPasswordData({
+        ...passwordData,
+        [e.target.name]: e.target.value
+      });
+    };
+
+    const handlePasswordSubmit = async (e) => {
+      e.preventDefault();
+      setPasswordLoading(true);
+      setPasswordError('');
+      setPasswordSuccess('');
+
+      if (passwordData.new_password !== passwordData.confirm_password) {
+        setPasswordError('New passwords do not match');
+        setPasswordLoading(false);
+        return;
+      }
+
+      try {
+        await apiService.changePassword({
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password
+        });
+
+        setPasswordSuccess('Password updated successfully!');
+        setPasswordData({
+          current_password: '',
+          new_password: '',
+          confirm_password: ''
+        });
+
+        setTimeout(() => setPasswordSuccess(''), 3000);
+      } catch (err) {
+        setPasswordError(err.message || 'Failed to update password');
+      } finally {
+        setPasswordLoading(false);
+      }
+    };
+
+    return (
+      <form onSubmit={handlePasswordSubmit}>
+        <div style={{ display: "grid", gap: "16px", maxWidth: "400px" }}>
+          {passwordError && (
+            <div className="error" style={{ fontSize: '14px' }}>{passwordError}</div>
+          )}
+          {passwordSuccess && (
+            <div className="success" style={{ fontSize: '14px' }}>{passwordSuccess}</div>
+          )}
+          
+          <input
+            type="password"
+            name="current_password"
+            value={passwordData.current_password}
+            onChange={handlePasswordChange}
+            placeholder="Current password"
+            className="input"
+            required
+            style={{ outline: "none" }}
+          />
+          <input
+            type="password"
+            name="new_password"
+            value={passwordData.new_password}
+            onChange={handlePasswordChange}
+            placeholder="New password"
+            className="input"
+            required
+            minLength="6"
+            style={{ outline: "none" }}
+          />
+          <input
+            type="password"
+            name="confirm_password"
+            value={passwordData.confirm_password}
+            onChange={handlePasswordChange}
+            placeholder="Confirm new password"
+            className="input"
+            required
+            style={{ outline: "none" }}
+          />
+          <button
+            type="submit"
+            disabled={passwordLoading}
+            className="btn btn-primary"
+            style={{ width: "fit-content", outline: "none" }}
+          >
+            {passwordLoading ? (
+              <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+            ) : (
+              'Update Password'
+            )}
+          </button>
+        </div>
+      </form>
+    );
+  };
+
+  if (fetchLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh'
+      }}>
+        <div className="spinner" style={{ width: '32px', height: '32px' }}></div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8">
@@ -167,6 +363,7 @@ function DashboardSettings() {
           </div>
 
           {success && <div className="success mb-6">{success}</div>}
+          {error && <div className="error mb-6">{error}</div>}
 
           <div className="flex gap-8">
             {/* Sidebar */}
@@ -959,38 +1156,7 @@ function DashboardSettings() {
                         >
                           Change Password
                         </h3>
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: "16px",
-                            maxWidth: "400px",
-                          }}
-                        >
-                          <input
-                            type="password"
-                            placeholder="Current password"
-                            className="input"
-                            style={{ outline: "none" }}
-                          />
-                          <input
-                            type="password"
-                            placeholder="New password"
-                            className="input"
-                            style={{ outline: "none" }}
-                          />
-                          <input
-                            type="password"
-                            placeholder="Confirm new password"
-                            className="input"
-                            style={{ outline: "none" }}
-                          />
-                          <button
-                            className="btn btn-primary"
-                            style={{ width: "fit-content", outline: "none" }}
-                          >
-                            Update Password
-                          </button>
-                        </div>
+                        <PasswordChangeForm />
                       </div>
 
                       <div>

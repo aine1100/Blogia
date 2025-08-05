@@ -11,74 +11,58 @@ import {
   Calendar,
 } from "lucide-react";
 import CustomDropdown from "../components/CustomDropdown";
+import apiService from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 function Analytics() {
   const [timeRange, setTimeRange] = useState("30d");
   const [analytics, setAnalytics] = useState({
     overview: {
-      totalViews: 12847,
-      totalLikes: 892,
-      totalComments: 234,
-      totalShares: 156,
-      viewsChange: 23.5,
-      likesChange: 12.8,
-      commentsChange: -5.2,
-      sharesChange: 8.9,
+      totalPosts: 0,
+      publishedPosts: 0,
+      draftPosts: 0,
+      totalViews: 0,
+      totalLikes: 0,
+      totalComments: 0,
+      totalShares: 0,
+      totalSubscribers: 0,
+      viewsChange: 0,
+      likesChange: 0,
+      commentsChange: 0,
+      sharesChange: 0,
     },
     topPosts: [],
     viewsOverTime: [],
     audienceGrowth: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
 
   const fetchAnalytics = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      setLoading(true);
+      setError('');
 
-      setAnalytics((prevAnalytics) => ({
-        ...prevAnalytics,
-        topPosts: [
-          {
-            id: 1,
-            title: "Building Modern Web Applications with FastAPI",
-            views: 3421,
-            likes: 187,
-            comments: 45,
-            shares: 23,
-            published_at: "2024-01-15T10:30:00Z",
-          },
-          {
-            id: 2,
-            title: "The Art of Minimal Design",
-            views: 2156,
-            likes: 134,
-            comments: 28,
-            shares: 19,
-            published_at: "2024-01-12T15:45:00Z",
-          },
-          {
-            id: 3,
-            title: "Understanding User Experience Through Data",
-            views: 1892,
-            likes: 98,
-            comments: 22,
-            shares: 15,
-            published_at: "2024-01-10T09:20:00Z",
-          },
-          {
-            id: 4,
-            title: "API Design Best Practices",
-            views: 1654,
-            likes: 87,
-            comments: 19,
-            shares: 12,
-            published_at: "2024-01-08T14:30:00Z",
-          },
-        ],
-      }));
+      // Fetch analytics data in parallel
+      const [overviewResponse, topPostsResponse, viewsOverTimeResponse, audienceGrowthResponse] = await Promise.all([
+        apiService.getAnalyticsOverview(timeRange),
+        apiService.getTopPosts(timeRange, 10),
+        apiService.getViewsOverTime(timeRange),
+        apiService.getAudienceGrowth(timeRange)
+      ]);
 
-      setLoading(false);
-    } catch {
+      setAnalytics({
+        overview: overviewResponse.overview || {},
+        topPosts: topPostsResponse.topPosts || [],
+        viewsOverTime: viewsOverTimeResponse.viewsOverTime || [],
+        audienceGrowth: audienceGrowthResponse.audienceGrowth || []
+      });
+
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+      setError('Failed to load analytics data. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -103,8 +87,31 @@ function Analytics() {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh'
+      }}>
+        <div className="spinner" style={{ width: '32px', height: '32px' }}></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8">
+        <div className="container">
+          <div style={{ maxWidth: "1200px", margin: "0 auto", textAlign: 'center' }}>
+            <div className="error" style={{ marginBottom: '16px' }}>{error}</div>
+            <button 
+              onClick={fetchAnalytics}
+              className="btn btn-primary"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -193,11 +200,11 @@ function Analytics() {
                   style={{
                     fontSize: "12px",
                     color:
-                      analytics.overview.viewsChange > 0
+                      (analytics.overview.viewsChange || 0) > 0
                         ? "#10b981"
                         : "#ef4444",
                     background:
-                      analytics.overview.viewsChange > 0
+                      (analytics.overview.viewsChange || 0) > 0
                         ? "#f0fdf4"
                         : "#fef2f2",
                     padding: "4px 8px",
@@ -205,8 +212,8 @@ function Analytics() {
                     fontWeight: "500",
                   }}
                 >
-                  {analytics.overview.viewsChange > 0 ? "+" : ""}
-                  {analytics.overview.viewsChange}%
+                  {(analytics.overview.viewsChange || 0) > 0 ? "+" : ""}
+                  {analytics.overview.viewsChange || 0}%
                 </span>
               </div>
               <div
@@ -217,7 +224,7 @@ function Analytics() {
                   marginBottom: "4px",
                 }}
               >
-                {formatNumber(analytics.overview.totalViews)}
+                {formatNumber(analytics.overview.totalViews || 0)}
               </div>
               <p style={{ color: "var(--gray-600)", fontSize: "14px" }}>
                 Total views
@@ -251,11 +258,11 @@ function Analytics() {
                   style={{
                     fontSize: "12px",
                     color:
-                      analytics.overview.likesChange > 0
+                      (analytics.overview.likesChange || 0) > 0
                         ? "#10b981"
                         : "#ef4444",
                     background:
-                      analytics.overview.likesChange > 0
+                      (analytics.overview.likesChange || 0) > 0
                         ? "#f0fdf4"
                         : "#fef2f2",
                     padding: "4px 8px",
@@ -263,8 +270,8 @@ function Analytics() {
                     fontWeight: "500",
                   }}
                 >
-                  {analytics.overview.likesChange > 0 ? "+" : ""}
-                  {analytics.overview.likesChange}%
+                  {(analytics.overview.likesChange || 0) > 0 ? "+" : ""}
+                  {analytics.overview.likesChange || 0}%
                 </span>
               </div>
               <div
@@ -275,7 +282,7 @@ function Analytics() {
                   marginBottom: "4px",
                 }}
               >
-                {formatNumber(analytics.overview.totalLikes)}
+                {formatNumber(analytics.overview.totalLikes || 0)}
               </div>
               <p style={{ color: "var(--gray-600)", fontSize: "14px" }}>
                 Total likes
@@ -309,11 +316,11 @@ function Analytics() {
                   style={{
                     fontSize: "12px",
                     color:
-                      analytics.overview.commentsChange > 0
+                      (analytics.overview.commentsChange || 0) > 0
                         ? "#10b981"
                         : "#ef4444",
                     background:
-                      analytics.overview.commentsChange > 0
+                      (analytics.overview.commentsChange || 0) > 0
                         ? "#f0fdf4"
                         : "#fef2f2",
                     padding: "4px 8px",
@@ -321,8 +328,8 @@ function Analytics() {
                     fontWeight: "500",
                   }}
                 >
-                  {analytics.overview.commentsChange > 0 ? "+" : ""}
-                  {analytics.overview.commentsChange}%
+                  {(analytics.overview.commentsChange || 0) > 0 ? "+" : ""}
+                  {analytics.overview.commentsChange || 0}%
                 </span>
               </div>
               <div
@@ -333,7 +340,7 @@ function Analytics() {
                   marginBottom: "4px",
                 }}
               >
-                {formatNumber(analytics.overview.totalComments)}
+                {formatNumber(analytics.overview.totalComments || 0)}
               </div>
               <p style={{ color: "var(--gray-600)", fontSize: "14px" }}>
                 Total comments
@@ -367,11 +374,11 @@ function Analytics() {
                   style={{
                     fontSize: "12px",
                     color:
-                      analytics.overview.sharesChange > 0
+                      (analytics.overview.sharesChange || 0) > 0
                         ? "#10b981"
                         : "#ef4444",
                     background:
-                      analytics.overview.sharesChange > 0
+                      (analytics.overview.sharesChange || 0) > 0
                         ? "#f0fdf4"
                         : "#fef2f2",
                     padding: "4px 8px",
@@ -379,8 +386,8 @@ function Analytics() {
                     fontWeight: "500",
                   }}
                 >
-                  {analytics.overview.sharesChange > 0 ? "+" : ""}
-                  {analytics.overview.sharesChange}%
+                  {(analytics.overview.sharesChange || 0) > 0 ? "+" : ""}
+                  {analytics.overview.sharesChange || 0}%
                 </span>
               </div>
               <div
@@ -391,7 +398,7 @@ function Analytics() {
                   marginBottom: "4px",
                 }}
               >
-                {formatNumber(analytics.overview.totalShares)}
+                {formatNumber(analytics.overview.totalShares || 0)}
               </div>
               <p style={{ color: "var(--gray-600)", fontSize: "14px" }}>
                 Total shares

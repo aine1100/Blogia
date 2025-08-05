@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { useAuth } from '../contexts/AuthContext'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -12,6 +14,9 @@ function Register() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const { register } = useAuth()
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({
@@ -24,23 +29,40 @@ function Register() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      const errorMessage = 'Passwords do not match'
+      setError(errorMessage)
+      toast.error(errorMessage)
       setLoading(false)
       return
     }
 
     try {
-      // TODO: Implement actual register API call
-      console.log('Register attempt:', formData)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // Redirect to dashboard after successful registration
-      window.location.href = '/dashboard'
+      const {  ...registerData } = formData
+      const result = await register(registerData)
+      
+      if (result.success) {
+        const successMessage = 'Account created successfully! Please sign in.'
+        setSuccess(successMessage)
+        toast.success(successMessage)
+        setTimeout(() => {
+          navigate('/login')
+        }, 2000)
+        
+      } else {
+        const errorMessage = result.error || 'Registration failed'
+        setError(errorMessage)
+        toast.error(errorMessage)
+      }
     } catch (err) {
-      setError('Registration failed. Please try again.')
+      const errorMessage = 'An unexpected error occurred'
+      setError(errorMessage)
+      toast.error(errorMessage)
+      console.error('Registration error:', err)
+    } finally {
       setLoading(false)
-      console.log(err)
     }
   }
 
@@ -59,6 +81,10 @@ function Register() {
 
           {error && (
             <div className="error mb-6">{error}</div>
+          )}
+
+          {success && (
+            <div className="success mb-6">{success}</div>
           )}
 
           <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>

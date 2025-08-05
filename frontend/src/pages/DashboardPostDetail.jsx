@@ -12,240 +12,155 @@ import {
   Linkedin,
   Mail,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import AuthorPostView from "../components/AuthorPostView";
+import apiService from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 function DashboardPostDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(0);
+  const [, setLikes] = useState(0);
   const [subscribed, setSubscribed] = useState(false);
-  const [isAuthor, setIsAuthor] = useState(false); // TODO: Get from auth context
-  const [postStats] = useState({
-    views: 3421,
-    likes: 187,
-    comments: 45,
-    shares: 23,
+  const [isAuthor, setIsAuthor] = useState(false);
+  const [postStats, setPostStats] = useState({
+    views: 0,
+    likes: 0,
+    comments: 0,
+    shares: 0,
   });
 
   useEffect(() => {
     fetchPost();
     fetchComments();
-  }, [id]);
+  }, [fetchComments, fetchPost, id]);
 
   const fetchPost = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      setLoading(true);
+      setError("");
 
-      // Mock post data
-      setPost({
-        id: parseInt(id),
-        title: "Building modern web applications with FastAPI and React",
-        subtitle:
-          "A comprehensive guide to creating scalable applications with the latest technologies and best practices",
-        content: `Building modern web applications requires the right combination of technologies, architecture decisions, and best practices. In this comprehensive guide, we'll explore how to create scalable, performant applications using FastAPI for the backend and React for the frontend.
+      // Fetch post data
+      const postData = await apiService.getPost(id);
+      setPost(postData);
 
-**Why FastAPI?**
+      // Check if current user is the author
+      setIsAuthor(user && user.id === postData.author_id);
 
-FastAPI has emerged as one of the most popular Python web frameworks for building APIs. Here's why it's become the go-to choice for many developers:
+      // Fetch post stats
+      try {
+        const stats = await apiService.getPostStats(id);
+        setPostStats(stats);
+        setLikes(stats.likes || 0);
+      } catch (statsError) {
+        console.warn("Failed to fetch post stats:", statsError);
+        // Use default stats if API call fails
+        setPostStats({
+          views: postData.views || 0,
+          likes: postData.likes || 0,
+          comments: 0,
+          shares: 0,
+        });
+        setLikes(postData.likes || 0);
+      }
 
-• **Performance**: FastAPI is one of the fastest Python frameworks available, rivaling Node.js and Go in speed
-• **Type Safety**: Built-in support for Python type hints means fewer bugs and better IDE support  
-• **Automatic Documentation**: Interactive API docs with Swagger UI generated automatically
-• **Modern Python**: Leverages the latest Python features like async/await
+      // Fetch user interactions if authenticated
+      if (user) {
+        try {
+          const interactions = await apiService.getUserPostInteractions(id);
+          setLiked(interactions.liked || false);
+        } catch (interactionError) {
+          console.warn("Failed to fetch user interactions:", interactionError);
+        }
+      }
 
-**Setting up the Backend**
+      // Track post view
+      try {
+        await apiService.trackPostView(id);
+      } catch (viewError) {
+        console.warn("Failed to track post view:", viewError);
+      }
 
-Let's start by creating a new FastAPI project. First, install the required dependencies:
-
-\`\`\`bash
-pip install fastapi uvicorn sqlalchemy psycopg2-binary
-\`\`\`
-
-Then create your main application file:
-
-\`\`\`python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI(title="Blog API", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}
-\`\`\`
-
-**Database Integration**
-
-For our blog application, we'll use SQLAlchemy with PostgreSQL. This combination provides excellent performance and reliability:
-
-\`\`\`python
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-DATABASE_URL = "postgresql://user:password@localhost/dbname"
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-\`\`\`
-
-**Frontend with React**
-
-On the frontend side, we'll use React with modern hooks and a clean architecture. Here's how to set up a basic component:
-
-\`\`\`jsx
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-function BlogList() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
-    try {
-      const response = await axios.get('/api/posts');
-      setPosts(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div>Loading...</div>;
-
-  return (
-    <div>
-      {posts.map(post => (
-        <article key={post.id}>
-          <h2>{post.title}</h2>
-          <p>{post.summary}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-\`\`\`
-
-**Best Practices for Production**
-
-When building applications with this stack, keep these best practices in mind:
-
-1. **API Design**: Follow RESTful principles and use proper HTTP status codes
-2. **Error Handling**: Implement comprehensive error handling on both frontend and backend
-3. **Authentication**: Use JWT tokens for secure authentication
-4. **Testing**: Write unit and integration tests for both components
-5. **Documentation**: Keep your API documentation up to date
-6. **Performance**: Implement caching strategies and optimize database queries
-
-**Deployment Strategy**
-
-For production deployment, I recommend this approach:
-
-• **Backend**: Docker containers with Gunicorn for production WSGI server
-• **Frontend**: Static hosting with CDN (Vercel, Netlify, or AWS CloudFront)
-• **Database**: Managed PostgreSQL service (AWS RDS, Google Cloud SQL)
-• **Monitoring**: Application performance monitoring with tools like Sentry or DataDog
-
-**Conclusion**
-
-FastAPI and React make an excellent combination for modern web applications. The type safety, performance, and developer experience they provide make them ideal choices for both startups and enterprise applications.
-
-This stack allows you to build scalable, maintainable applications that can grow with your business needs. The key is to follow best practices, maintain clean and well-documented code, and always keep security and performance in mind.
-
-*What's your experience with FastAPI and React? Have you tried this combination for your projects? I'd love to hear your thoughts in the comments below.*`,
-        summary:
-          "A comprehensive guide to creating scalable applications with the latest technologies and best practices.",
-        created_at: "2024-01-15T10:30:00Z",
-        updated_at: "2024-01-15T10:30:00Z",
-        author: {
-          full_name: "John Doe",
-          username: "john_doe",
-          bio: "Senior Software Engineer with 8+ years of experience building scalable web applications. Passionate about clean code and modern development practices.",
-          avatar: null,
-        },
-        read_time: 8,
-        category: "Development",
-      });
-
-      setLikes(42);
-      // TODO: Check if current user is the author
-      setIsAuthor(true); // Mock - set to true to show author view
       setLoading(false);
     } catch (err) {
-      setError("Failed to fetch post");
+      setError(err.message || "Failed to fetch post");
       setLoading(false);
-      console.log(err);
     }
   };
 
   const fetchComments = async () => {
     try {
-      // Mock comments data
-      setComments([
-        {
-          id: 1,
-          content:
-            "Great article! I've been looking for a comprehensive guide like this. The code examples are really helpful.",
-          created_at: "2024-01-16T09:30:00Z",
-          author: { full_name: "Alice Johnson", username: "alice_j" },
-        },
-        {
-          id: 2,
-          content:
-            "Thanks for sharing this. I'm currently working on a similar project and this gives me some great ideas for the architecture.",
-          created_at: "2024-01-16T14:15:00Z",
-          author: { full_name: "Bob Smith", username: "bob_smith" },
-        },
-        {
-          id: 3,
-          content:
-            "The FastAPI section is particularly well written. Would love to see a follow-up article on deployment strategies.",
-          created_at: "2024-01-17T11:45:00Z",
-          author: { full_name: "Carol Davis", username: "carol_d" },
-        },
-      ]);
+      const commentsData = await apiService.getPostComments(id);
+      setComments(commentsData || []);
+
+      // Update comment count in stats
+      setPostStats((prev) => ({
+        ...prev,
+        comments: commentsData?.length || 0,
+      }));
     } catch (err) {
       console.error("Failed to fetch comments:", err);
+      setComments([]);
     }
   };
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikes(liked ? likes - 1 : likes + 1);
+  const handleLike = async () => {
+    if (!user) {
+      toast.error("Please sign in to like posts");
+      return;
+    }
+
+    try {
+      const result = await apiService.togglePostLike(id);
+      setLiked(result.liked);
+      setLikes(result.total_likes);
+
+      // Update stats
+      setPostStats((prev) => ({
+        ...prev,
+        likes: result.total_likes,
+      }));
+
+      toast.success(result.liked ? "Post liked!" : "Like removed");
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+      toast.error("Failed to update like");
+    }
   };
 
-  const handleCommentSubmit = (e) => {
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !user) return;
 
-    const comment = {
-      id: comments.length + 1,
-      content: newComment,
-      created_at: new Date().toISOString(),
-      author: { full_name: "Current User", username: "current_user" },
-    };
+    try {
+      const commentData = {
+        post_id: parseInt(id),
+        content: newComment.trim(),
+      };
 
-    setComments([...comments, comment]);
-    setNewComment("");
+      const newCommentResponse = await apiService.createComment(commentData);
+
+      // Add the new comment to the list
+      setComments((prev) => [...prev, newCommentResponse]);
+      setNewComment("");
+
+      // Update comment count in stats
+      setPostStats((prev) => ({
+        ...prev,
+        comments: prev.comments + 1,
+      }));
+
+      toast.success("Comment posted successfully!");
+    } catch (err) {
+      console.error("Failed to create comment:", err);
+      toast.error("Failed to post comment. Please try again.");
+    }
   };
 
   const formatDate = (dateString) => {
@@ -297,7 +212,7 @@ This stack allows you to build scalable, maintainable applications that can grow
       {/* Back button */}
       <div className="container py-4" style={{ padding: "16px 32px" }}>
         <Link
-          to="/dashboard"
+          to="/dashboard/posts"
           className="flex items-center gap-2"
           style={{
             color: "var(--gray-600)",
@@ -310,7 +225,7 @@ This stack allows you to build scalable, maintainable applications that can grow
           onMouseLeave={(e) => (e.target.style.color = "var(--gray-600)")}
         >
           <ArrowLeft size={16} />
-          Back to home
+          Back to posts
         </Link>
       </div>
 
@@ -333,7 +248,7 @@ This stack allows you to build scalable, maintainable applications that can grow
             {post.title}
           </h1>
 
-          {post.subtitle && (
+          {post.summary && (
             <p
               style={{
                 fontSize: "1.25rem",
@@ -343,7 +258,7 @@ This stack allows you to build scalable, maintainable applications that can grow
                 fontWeight: "400",
               }}
             >
-              {post.subtitle}
+              {post.summary}
             </p>
           )}
 
@@ -363,7 +278,9 @@ This stack allows you to build scalable, maintainable applications that can grow
                 fontWeight: "600",
               }}
             >
-              {post.author.full_name.charAt(0)}
+              {post.author?.full_name?.charAt(0) ||
+                post.author?.username?.charAt(0) ||
+                "U"}
             </div>
             <div>
               <p
@@ -374,7 +291,9 @@ This stack allows you to build scalable, maintainable applications that can grow
                   marginBottom: "4px",
                 }}
               >
-                {post.author.full_name}
+                {post.author?.full_name ||
+                  post.author?.username ||
+                  "Unknown Author"}
               </p>
               <div
                 className="flex items-center gap-3"
@@ -385,7 +304,9 @@ This stack allows you to build scalable, maintainable applications that can grow
               >
                 <span>{formatDate(post.created_at)}</span>
                 <span>•</span>
-                <span>{post.read_time} min read</span>
+                <span>
+                  {Math.ceil((post.content?.length || 0) / 200)} min read
+                </span>
               </div>
             </div>
           </div>
@@ -413,7 +334,7 @@ This stack allows you to build scalable, maintainable applications that can grow
                 }}
               >
                 <Heart size={18} fill={liked ? "#ef4444" : "none"} />
-                <span>{likes}</span>
+                <span>{postStats.likes}</span>
               </button>
               <button
                 className="flex items-center gap-2"
@@ -427,7 +348,7 @@ This stack allows you to build scalable, maintainable applications that can grow
                 }}
               >
                 <MessageCircle size={18} />
-                <span>{comments.length}</span>
+                <span>{postStats.comments}</span>
               </button>
             </div>
 
@@ -553,7 +474,9 @@ This stack allows you to build scalable, maintainable applications that can grow
                   flexShrink: 0,
                 }}
               >
-                {post.author.full_name.charAt(0)}
+                {post.author?.full_name?.charAt(0) ||
+                  post.author?.username?.charAt(0) ||
+                  "U"}
               </div>
               <div>
                 <h4
@@ -564,7 +487,9 @@ This stack allows you to build scalable, maintainable applications that can grow
                     marginBottom: "8px",
                   }}
                 >
-                  {post.author.full_name}
+                  {post.author?.full_name ||
+                    post.author?.username ||
+                    "Unknown Author"}
                 </h4>
                 <p
                   style={{
@@ -574,7 +499,7 @@ This stack allows you to build scalable, maintainable applications that can grow
                     marginBottom: "16px",
                   }}
                 >
-                  {post.author.bio}
+                  {post.author?.bio || "No bio available"}
                 </p>
                 <button
                   onClick={() => setSubscribed(!subscribed)}
@@ -603,7 +528,8 @@ This stack allows you to build scalable, maintainable applications that can grow
               color: "var(--black)",
             }}
           >
-            {comments.length} {comments.length === 1 ? "comment" : "comments"}
+            {postStats.comments}{" "}
+            {postStats.comments === 1 ? "comment" : "comments"}
           </h3>
 
           {/* Comment form */}
@@ -694,7 +620,9 @@ This stack allows you to build scalable, maintainable applications that can grow
                           flexShrink: 0,
                         }}
                       >
-                        {comment.author.full_name.charAt(0)}
+                        {comment.author?.full_name?.charAt(0) ||
+                          comment.author?.username?.charAt(0) ||
+                          "U"}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div className="flex items-center gap-2 mb-2">
@@ -705,7 +633,9 @@ This stack allows you to build scalable, maintainable applications that can grow
                               color: "var(--black)",
                             }}
                           >
-                            {comment.author.full_name}
+                            {comment.author?.full_name ||
+                              comment.author?.username ||
+                              "Unknown User"}
                           </p>
                           <span
                             style={{

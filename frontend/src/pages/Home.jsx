@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Clock } from "lucide-react";
+import apiService from "../services/api";
 
 function Home() {
   const [posts, setPosts] = useState([]);
@@ -13,56 +14,17 @@ function Home() {
 
   const fetchPosts = async () => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      setLoading(true);
+      setError("");
 
-      setPosts([
-        {
-          id: 1,
-          title: "Building modern web applications",
-          summary:
-            "A comprehensive guide to creating scalable applications with the latest technologies and best practices.",
-          created_at: "2024-01-15T10:30:00Z",
-          author: { full_name: "John Doe" },
-          read_time: 8,
-          category: "Development",
-        },
-        {
-          id: 2,
-          title: "The art of minimal design",
-          summary:
-            "Exploring principles of minimalist design and how to apply them effectively in digital products.",
-          created_at: "2024-01-14T15:45:00Z",
-          author: { full_name: "Jane Smith" },
-          read_time: 6,
-          category: "Design",
-        },
-        {
-          id: 3,
-          title: "API design best practices",
-          summary:
-            "Essential guidelines for designing robust, scalable APIs that stand the test of time.",
-          created_at: "2024-01-13T09:15:00Z",
-          author: { full_name: "Alex Chen" },
-          read_time: 12,
-          category: "Backend",
-        },
-        {
-          id: 4,
-          title: "Understanding user experience",
-          summary:
-            "How to leverage research and data to make informed design decisions that users love.",
-          created_at: "2024-01-12T14:20:00Z",
-          author: { full_name: "Sarah Wilson" },
-          read_time: 9,
-          category: "UX",
-        },
-      ]);
+      // Fetch published posts for home page (limit to 4 for featured section)
+      const response = await apiService.getPosts(0, 4);
+      setPosts(response || []);
       setLoading(false);
     } catch (err) {
       setError("Failed to fetch posts");
       setLoading(false);
-      console.log(err)
+      console.error("Error fetching posts:", err);
     }
   };
 
@@ -252,14 +214,14 @@ function Home() {
                       fontWeight: "600",
                     }}
                   >
-                    {post.author.full_name.charAt(0)}
+                    {post.author?.full_name?.charAt(0) || post.author?.username?.charAt(0) || "U"}
                   </div>
                   <div
                     className="flex items-center gap-2"
                     style={{ fontSize: "14px", color: "var(--gray-600)" }}
                   >
                     <span style={{ fontWeight: "500" }}>
-                      {post.author.full_name}
+                      {post.author?.full_name || post.author?.username || "Unknown Author"}
                     </span>
                     <span>•</span>
                     <span>{formatDate(post.created_at)}</span>
@@ -315,14 +277,14 @@ function Home() {
                         padding: "4px 8px",
                       }}
                     >
-                      {post.category}
+                      {post.category || "Article"}
                     </span>
                     <div
                       className="flex items-center gap-1"
                       style={{ color: "var(--gray-500)", fontSize: "13px" }}
                     >
                       <Clock size={12} />
-                      <span>{post.read_time} min read</span>
+                      <span>{Math.ceil((post.content?.length || 0) / 200)} min read</span>
                     </div>
                   </div>
 

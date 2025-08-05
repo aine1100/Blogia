@@ -11,10 +11,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import CustomDropdown from "../components/CustomDropdown";
+import apiService from "../services/api";
+
 
 function DashboardPosts() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [filter, setFilter] = useState("all"); // all, published, draft
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date"); // date, views, title
@@ -25,80 +28,17 @@ function DashboardPosts() {
 
   const fetchPosts = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      setLoading(true);
+      setError("");
 
-      setPosts([
-        {
-          id: 1,
-          title: "Building Modern Web Applications with FastAPI and React",
-          summary:
-            "A comprehensive guide to creating scalable applications with the latest technologies and best practices.",
-          status: "published",
-          views: 3421,
-          likes: 187,
-          comments: 45,
-          created_at: "2024-01-15T10:30:00Z",
-          published_at: "2024-01-15T10:30:00Z",
-          category: "Development",
-        },
-        {
-          id: 2,
-          title: "The Art of Minimal Design",
-          summary:
-            "Exploring principles of minimalist design and how to apply them effectively in digital products.",
-          status: "published",
-          views: 2156,
-          likes: 134,
-          comments: 28,
-          created_at: "2024-01-12T15:45:00Z",
-          published_at: "2024-01-12T15:45:00Z",
-          category: "Design",
-        },
-        {
-          id: 3,
-          title: "Understanding User Experience Through Data",
-          summary:
-            "How to leverage analytics and user research to make informed design decisions that users love.",
-          status: "draft",
-          views: 0,
-          likes: 0,
-          comments: 0,
-          created_at: "2024-01-10T09:20:00Z",
-          published_at: null,
-          category: "UX Research",
-        },
-        {
-          id: 4,
-          title: "API Design Best Practices for Modern Applications",
-          summary:
-            "Essential guidelines for designing robust, scalable APIs that stand the test of time.",
-          status: "published",
-          views: 1892,
-          likes: 98,
-          comments: 22,
-          created_at: "2024-01-08T14:30:00Z",
-          published_at: "2024-01-08T14:30:00Z",
-          category: "Backend",
-        },
-        {
-          id: 5,
-          title: "The Future of Frontend Development",
-          summary:
-            "Exploring emerging trends in frontend development and what's coming next.",
-          status: "draft",
-          views: 0,
-          likes: 0,
-          comments: 0,
-          created_at: "2024-01-05T11:15:00Z",
-          published_at: null,
-          category: "Frontend",
-        },
-      ]);
-
-      setLoading(false);
+      // Get current user's posts (both published and drafts)
+      const response = await apiService.getMyPosts(0, 100);
+      setPosts(response || []);
     } catch (err) {
+      console.error("Failed to fetch posts:", err);
+      setError("Failed to load posts. Please try again.");
+    } finally {
       setLoading(false);
-      console.log(err);
     }
   };
 
@@ -118,17 +58,19 @@ function DashboardPosts() {
   };
 
   const filteredPosts = posts.filter((post) => {
-    const matchesFilter = filter === "all" || post.status === filter;
+    const status = post.is_published ? "published" : "draft";
+    const matchesFilter = filter === "all" || status === filter;
     const matchesSearch =
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.summary.toLowerCase().includes(searchTerm.toLowerCase());
+      (post.summary &&
+        post.summary.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesFilter && matchesSearch;
   });
 
   const sortedPosts = [...filteredPosts].sort((a, b) => {
     switch (sortBy) {
       case "views":
-        return b.views - a.views;
+        return (b.views || 0) - (a.views || 0);
       case "title":
         return a.title.localeCompare(b.title);
       case "date":
@@ -139,8 +81,41 @@ function DashboardPosts() {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
+        <div
+          className="spinner"
+          style={{ width: "32px", height: "32px" }}
+        ></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8">
+        <div className="container">
+          <div
+            style={{
+              maxWidth: "1200px",
+              margin: "0 auto",
+              textAlign: "center",
+            }}
+          >
+            <div className="error" style={{ marginBottom: "16px" }}>
+              {error}
+            </div>
+            <button onClick={fetchPosts} className="btn btn-primary">
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -203,12 +178,12 @@ function DashboardPosts() {
                   {
                     key: "published",
                     label: "Published",
-                    count: posts.filter((p) => p.status === "published").length,
+                    count: posts.filter((p) => p.is_published).length,
                   },
                   {
                     key: "draft",
                     label: "Drafts",
-                    count: posts.filter((p) => p.status === "draft").length,
+                    count: posts.filter((p) => !p.is_published).length,
                   },
                 ].map((tab) => (
                   <button
@@ -329,29 +304,22 @@ function DashboardPosts() {
                         <span
                           className="badge"
                           style={{
-                            background:
-                              post.status === "published"
-                                ? "#f0fdf4"
-                                : "#fef3c7",
-                            color:
-                              post.status === "published"
-                                ? "#059669"
-                                : "#92400e",
+                            background: post.is_published
+                              ? "#f0fdf4"
+                              : "#fef3c7",
+                            color: post.is_published ? "#059669" : "#92400e",
                             fontSize: "12px",
                             padding: "4px 8px",
                             fontWeight: "500",
                           }}
                         >
-                          {post.status}
-                        </span>
-                        <span className="badge" style={{ fontSize: "11px" }}>
-                          {post.category}
+                          {post.is_published ? "published" : "draft"}
                         </span>
                         <span
                           style={{ fontSize: "12px", color: "var(--gray-500)" }}
                         >
-                          {post.published_at
-                            ? `Published ${formatDate(post.published_at)}`
+                          {post.is_published
+                            ? `Published ${formatDate(post.created_at)}`
                             : `Created ${formatDate(post.created_at)}`}
                         </span>
                       </div>
@@ -383,32 +351,34 @@ function DashboardPosts() {
                         </Link>
                       </h3>
 
-                      <p
-                        style={{
-                          color: "var(--gray-600)",
-                          lineHeight: "1.6",
-                          marginBottom: "16px",
-                          fontSize: "14px",
-                        }}
-                      >
-                        {post.summary}
-                      </p>
+                      {post.summary && (
+                        <p
+                          style={{
+                            color: "var(--gray-600)",
+                            lineHeight: "1.6",
+                            marginBottom: "16px",
+                            fontSize: "14px",
+                          }}
+                        >
+                          {post.summary}
+                        </p>
+                      )}
 
-                      {post.status === "published" && (
+                      {post.is_published && (
                         <div
                           className="flex items-center gap-6"
                           style={{ fontSize: "14px", color: "var(--gray-500)" }}
                         >
                           <div className="flex items-center gap-1">
                             <Eye size={14} />
-                            <span>{formatNumber(post.views)} views</span>
+                            <span>{formatNumber(post.views || 0)} views</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <TrendingUp size={14} />
-                            <span>{post.likes} likes</span>
+                            <span>{post.likes || 0} likes</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span>{post.comments} comments</span>
+                            <span>{post.comments || 0} comments</span>
                           </div>
                         </div>
                       )}
@@ -425,7 +395,7 @@ function DashboardPosts() {
                         Edit
                       </Link>
 
-                      {post.status === "published" && (
+                      {post.is_published && (
                         <Link
                           to={`/dashboard/post/${post.id}`}
                           className="btn btn-ghost"
@@ -473,14 +443,20 @@ function DashboardPosts() {
                 <div>
                   <span style={{ fontWeight: "600", color: "var(--black)" }}>
                     {formatNumber(
-                      sortedPosts.reduce((sum, post) => sum + post.views, 0)
+                      sortedPosts.reduce(
+                        (sum, post) => sum + (post.views || 0),
+                        0
+                      )
                     )}
                   </span>{" "}
                   total views
                 </div>
                 <div>
                   <span style={{ fontWeight: "600", color: "var(--black)" }}>
-                    {sortedPosts.reduce((sum, post) => sum + post.likes, 0)}
+                    {sortedPosts.reduce(
+                      (sum, post) => sum + (post.likes || 0),
+                      0
+                    )}
                   </span>{" "}
                   total likes
                 </div>

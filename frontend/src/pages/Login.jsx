@@ -1,14 +1,18 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { useAuth } from '../contexts/AuthContext'
 
 function Login() {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({
@@ -23,15 +27,24 @@ function Login() {
     setError('')
 
     try {
-      // TODO: Implement actual login API call
-      console.log('Login attempt:', formData)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // Redirect to dashboard after successful login
-      window.location.href = '/dashboard'
+      const result = await login(formData.username, formData.password)
+      
+      if (result.success) {
+        toast.success('Welcome back! Login successful.')
+        // Redirect to dashboard after successful login
+        navigate('/dashboard')
+      } else {
+        const errorMessage = result.error || 'Login failed'
+        setError(errorMessage)
+        toast.error(errorMessage)
+      }
     } catch (err) {
-      setError('Invalid email or password')
+      const errorMessage = 'An unexpected error occurred'
+      setError(errorMessage)
+      toast.error(errorMessage)
+      console.error('Login error:', err)
+    } finally {
       setLoading(false)
-      console.log(err)
     }
   }
 
@@ -55,7 +68,7 @@ function Login() {
           <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
             <div style={{ marginBottom: '20px' }}>
               <label 
-                htmlFor="email" 
+                htmlFor="username" 
                 style={{ 
                   display: 'block',
                   fontSize: '14px',
@@ -64,16 +77,16 @@ function Login() {
                   marginBottom: '8px'
                 }}
               >
-                Email
+                Username
               </label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 className="input"
-                placeholder="Enter your email"
+                placeholder="Enter your username"
                 required
                 style={{outline:"none"}}
               />

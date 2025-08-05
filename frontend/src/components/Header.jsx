@@ -10,19 +10,22 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const location = useLocation();
-  const isAuthenticated = false; // TODO: Implement auth state
+  const { isAuthenticated, user, logout } = useAuth();
   const dropdownRef = useRef(null);
 
   // Check if we're on a dashboard page
   const isDashboardPage =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/dashboard/analytics") ||
-    location.pathname === "/dashboard/settings";
+    location.pathname === "/dashboard/settings" ||
+    location.pathname === "/create" ||
+    location.pathname.startsWith("/edit");
 
   const dashboardNavItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -257,9 +260,15 @@ function Header() {
                         fontWeight: "600",
                       }}
                     >
-                      DA
+                      {user?.full_name
+                        ? user.full_name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                        : user?.username?.substring(0, 2).toUpperCase() || "U"}
                     </div>
-                    <span>Dushimire</span>
+                    <span>{user?.full_name || user?.username || "User"}</span>
                   </button>
 
                   {/* Dropdown Menu */}
@@ -292,12 +301,12 @@ function Header() {
                             color: "var(--black)",
                           }}
                         >
-                          Dushimire Aine
+                          {user?.full_name || user?.username || "User"}
                         </div>
                         <div
                           style={{ fontSize: "12px", color: "var(--gray-600)" }}
                         >
-                          dushimire.aine@example.com
+                          {user?.email || "user@example.com"}
                         </div>
                       </div>
 
@@ -363,7 +372,7 @@ function Header() {
                         <button
                           onClick={() => {
                             setProfileDropdownOpen(false);
-                            // TODO: Implement logout
+                            logout();
                           }}
                           style={{
                             display: "flex",
@@ -551,10 +560,10 @@ function Header() {
                         color: "var(--black)",
                       }}
                     >
-                      Dushimire Aine
+                      {user?.full_name || user?.username || "User"}
                     </div>
                     <div style={{ fontSize: "12px", color: "var(--gray-600)" }}>
-                      dushimire.aine@example.com
+                      {user?.email || "user@example.com"}
                     </div>
                   </div>
 
@@ -583,7 +592,7 @@ function Header() {
                     style={{ color: "var(--red)", borderColor: "var(--red)" }}
                     onClick={() => {
                       setMobileMenuOpen(false);
-                      // TODO: Implement logout
+                      logout();
                     }}
                   >
                     <LogOut size={16} />

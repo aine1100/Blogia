@@ -16,6 +16,19 @@ def get_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     posts = db.query(models.Post).filter(models.Post.is_published == True).offset(skip).limit(limit).all()
     return posts
 
+@router.get("/my-posts", response_model=List[schemas.Post])
+def get_my_posts(
+    skip: int = 0, 
+    limit: int = 100, 
+    current_user: schemas.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's posts (both published and drafts)"""
+    posts = db.query(models.Post).filter(
+        models.Post.author_id == current_user.id
+    ).order_by(models.Post.created_at.desc()).offset(skip).limit(limit).all()
+    return posts
+
 @router.get("/{post_id}", response_model=schemas.Post)
 def get_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
