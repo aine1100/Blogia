@@ -10,9 +10,23 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Blog API", version="1.0.0")
 
 # CORS middleware
+import os
+allowed_origins = [
+    "http://localhost:3000",  # Local development
+    "http://localhost",       # Local production
+    "https://your-frontend-url.vercel.app",  # Replace with your frontend URL
+    "https://yourdomain.com", # Replace with your custom domain
+]
+
+# In production, use environment variable for allowed origins
+if os.getenv("ENVIRONMENT") == "production":
+    frontend_url = os.getenv("FRONTEND_URL")
+    if frontend_url:
+        allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

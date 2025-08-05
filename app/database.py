@@ -1,10 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from decouple import config 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Use SQLite for development (easier setup)
-DATABASE_URL = config("DATABASE_URL", default="sqlite:///./blog.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./blog.db")
 
 engine = create_engine(
     DATABASE_URL, 
