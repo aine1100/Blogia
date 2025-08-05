@@ -51,10 +51,10 @@ mkdir -p app/data
 
 # Build and start services
 echo "🔨 Building Docker images..."
-docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose build --no-cache
 
 echo "🚀 Starting services..."
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose up -d
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be ready..."
@@ -62,7 +62,7 @@ sleep 30
 
 # Check service health
 echo "🔍 Checking service health..."
-if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+if docker-compose ps | grep -q "Up"; then
     echo "✅ Services are running!"
     echo ""
     echo "🌐 Application URLs:"
@@ -71,12 +71,12 @@ if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
     echo "   API Documentation: http://localhost:8000/docs"
     echo ""
     echo "📊 To view logs:"
-    echo "   docker-compose -f docker-compose.prod.yml logs -f"
+    echo "   docker-compose logs -f"
     echo ""
     echo "🛑 To stop services:"
-    echo "   docker-compose -f docker-compose.prod.yml down"
+    echo "   docker-compose down"
 else
     echo "❌ Some services are not healthy. Check logs:"
-    docker-compose -f docker-compose.prod.yml logs
+    docker-compose logs
     exit 1
 fi
