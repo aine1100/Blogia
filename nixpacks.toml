@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python39", "pip"]
+
+[phases.install]
+cmds = ["pip install -r app/requirements.txt"]
+
+[phases.build]
+cmds = ["echo 'No build step needed'"]
+
+[start]
+cmd = "cd app && uvicorn main:app --host 0.0.0.0 --port $PORT"
