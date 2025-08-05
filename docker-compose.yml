@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: blog-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/blog.db
+      - SECRET_KEY=your-secret-key-change-this-in-production
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    volumes:
+      - ./app/data:/app/data
+      - ./app:/app
+    networks:
+      - blog-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: blog-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - blog-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  blog-network:
+    driver: bridge
+
+volumes:
+  blog-data:
+    driver: local
