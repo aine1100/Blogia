@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine
-import models
-from routers import auth, post, analytics, dashboard, user, comments, interactions, subscribers
+from .database import engine
+from . import models
+from .routers import auth, post, analytics, dashboard, user, comments, interactions, subscribers
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -12,8 +12,8 @@ app = FastAPI(title="Blog API", version="1.0.0")
 # CORS middleware
 import os
 allowed_origins = [
-    "http://localhost:3000",  # Local development
-    "http://localhost",       # Local production
+    "http://localhost:5173",  # Local development
+    "http://localhost:3000",       # Local production
     "https://your-frontend-url.vercel.app",  # Replace with your frontend URL
     "https://yourdomain.com", # Replace with your custom domain
 ]
