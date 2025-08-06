@@ -3,9 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
-from .. import models, schemas
-from ..database import get_db
-from ..dependencies import get_current_active_user
+try:
+    from .. import models, schemas
+    from ..database import get_db
+    from ..dependencies import get_current_active_user
+except ImportError:
+    import models, schemas
+    from database import get_db
+    from dependencies import get_current_active_user
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 

@@ -1,8 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import engine
-from . import models
-from .routers import auth, post, analytics, dashboard, user, comments, interactions, subscribers
+import os
+import sys
+
+# Add current directory to Python path for Docker compatibility
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    # Try relative imports first (for module execution)
+    from .database import engine
+    from . import models
+    from .routers import auth, post, analytics, dashboard, user, comments, interactions, subscribers
+except ImportError:
+    # Fall back to absolute imports (for direct execution)
+    from database import engine
+    import models
+    from routers import auth, post, analytics, dashboard, user, comments, interactions, subscribers
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -14,7 +27,7 @@ import os
 allowed_origins = [
     "http://localhost:5173",  # Local development
     "http://localhost:3000",       # Local production
-    "https://your-frontend-url.vercel.app",  # Replace with your frontend URL
+    "https://blogia-pi.vercel.app/",  # Replace with your frontend URL
     "https://yourdomain.com", # Replace with your custom domain
 ]
 

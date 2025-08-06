@@ -1,9 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
-from .. import models, schemas
-from ..database import get_db
-from ..dependencies import get_current_active_user
+try:
+    from .. import models, schemas
+    from ..database import get_db
+    from ..dependencies import get_current_active_user
+except ImportError:
+    import models, schemas
+    from database import get_db
+    from dependencies import get_current_active_user
 from typing import Optional
 
 router = APIRouter(prefix="/interactions", tags=["Post Interactions"])
