@@ -26,16 +26,22 @@ app = FastAPI(title="Blog API", version="1.0.0")
 import os
 allowed_origins = [
     "http://localhost:5173",  # Local development
-    "http://localhost:3000",       # Local production
-    "https://blogia-pi.vercel.app/",  # Replace with your frontend URL
-    "https://yourdomain.com", # Replace with your custom domain
+    "http://localhost:3000",  # Local production
+    "https://*.vercel.app",   # All Vercel deployments
+    "https://blogia-pi.vercel.app",  # Your specific Vercel app
 ]
 
-# In production, use environment variable for allowed origins
+# In production, add environment-specific origins
 if os.getenv("ENVIRONMENT") == "production":
     frontend_url = os.getenv("FRONTEND_URL")
     if frontend_url:
         allowed_origins.append(frontend_url)
+    
+    # Add common Vercel patterns
+    allowed_origins.extend([
+        "https://*.vercel.app",
+        "https://vercel.app",
+    ])
 
 app.add_middleware(
     CORSMiddleware,
