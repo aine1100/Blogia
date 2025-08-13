@@ -93,7 +93,7 @@ function Posts() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input"
-                style={{ paddingLeft: '40px' }}
+                style={{ paddingLeft: '40px',outline:"none" }}
               />
             </div>
           </div>
