@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://54.82.232.68:8000';
+// Use Vercel API routes as proxy to avoid mixed content issues
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (
+  typeof window !== 'undefined' && window.location.origin.includes('vercel.app') 
+    ? '/api'  // Use Vercel API proxy
+    : 'http://54.82.232.68:8000'  // Direct backend for local development
+);
 
 class ApiService {
   constructor() {
@@ -40,14 +45,30 @@ class ApiService {
 
   // Auth endpoints
   async login(username, password) {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
-
-    const response = await fetch(`${this.baseURL}/auth/login`, {
-      method: 'POST',
-      body: formData,
-    });
+    // Use special login endpoint for Vercel proxy
+    const isVercel = this.baseURL === '/api';
+    const loginUrl = isVercel ? '/api/auth/login' : `${this.baseURL}/auth/login`;
+    
+    let response;
+    
+    if (isVercel) {
+      // For Vercel proxy, send JSON
+      response = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+    } else {
+      // For direct backend, use FormData
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
+      
+      response = await fetch(loginUrl, {
+        method: 'POST',
+        body: formData,
+      });
+    }
 
     const data = await this.handleResponse(response);
     this.setToken(data.access_token);
