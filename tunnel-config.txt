@@ -1,0 +1,3 @@
+# Cloudflare Tunnel Config 
+Backend IP: 54.82.232.68 
+Backend URL: http://54.82.232.68:8000 

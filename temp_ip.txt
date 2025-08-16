@@ -1,0 +1,8 @@
+Getting public IP for ECS service...
+Task ARN: arn:aws:ecs:us-east-1:644802182209:task/blog-backend-cluster/fde447654af948b09b385661bae06150
+Network Interface ID: eni-00a7cb821d6468101
+Public IP: 54.82.232.68
+Backend API URL: http://54.82.232.68:8000
+API Documentation: http://54.82.232.68:8000/docs
+Health Check: http://54.82.232.68:8000/health
+Press any key to continue . . . 
