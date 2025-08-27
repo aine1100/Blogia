@@ -1,7 +1,7 @@
 // Use Vercel API routes as proxy to avoid mixed content issues
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (
   typeof window !== 'undefined' && window.location.origin.includes('vercel.app') 
-    ? '/api'  // Use Vercel API proxy
+    ? 'https://blogia-tizd.onrender.com'  // Use Vercel API proxy
     : 'http://54.82.232.68:8000'  // Direct backend for local development
 );
 
