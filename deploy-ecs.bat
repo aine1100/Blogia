@@ -30,6 +30,11 @@ for /f "tokens=*" %%i in ('aws ecr get-login-password --region %AWS_REGION%') do
 REM Build and push backend image
 echo Building and pushing backend image...
 docker build -f app/Dockerfile.production -t %BACKEND_REPO_NAME% ./app
+if %errorlevel% neq 0 (
+    echo ✗ Docker build failed
+    echo Trying alternative build method...
+    docker build -f Dockerfile -t %BACKEND_REPO_NAME% .
+)
 docker tag %BACKEND_REPO_NAME%:latest %ACCOUNT_ID%.dkr.ecr.%AWS_REGION%.amazonaws.com/%BACKEND_REPO_NAME%:latest
 docker push %ACCOUNT_ID%.dkr.ecr.%AWS_REGION%.amazonaws.com/%BACKEND_REPO_NAME%:latest
 
